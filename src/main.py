@@ -5,20 +5,17 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy import select
 
-from schemas import UserBase, DeskBase
-from database.models import User, Desk
-from config import DB_URL
-from database.core import engine, sessionmaker
+from src.schemas import UserBase, DeskBase
+from src.database.models import User, Desk
+from src.config import DB_URL
+from src.database.core import engine, sessionmaker, get_session
+
+from src import todo
 
 
-app = FastAPI(title="todo api", version="1.0.1")
+app = FastAPI(title="todo api", version="2.0.1")
+app.include_router(todo.router)
 
-async def get_session() -> AsyncSession:
-    db = sessionmaker()
-    try:
-        yield db
-    finally:
-        await db.close()
 
 @app.get("/")
 async def main():
@@ -46,6 +43,8 @@ async def get_users(session: AsyncSession = Depends(get_session)):
     usrs = results.scalars().all()
     return {"users": usrs}
 
-@app.get('users/{username}')
-async def get_user(username: str):
-    pass
+@app.get('/users/{username}')
+async def get_user(username: str, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(User).where(User.username == username))
+    usr = result.scalars().one()
+    return {"users": usr}
