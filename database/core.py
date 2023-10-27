@@ -1,12 +1,12 @@
-# from redis_om import get_redis_connection
-from os import getenv
-from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from config import DB_URL
 
-load_dotenv()
 
-# redis = get_redis_connection(
-#     host=str(getenv("REDIS_HOST")),
-#     port=str(getenv("REDIS_PORT")),
-#     password=str(getenv("REDIS_PASSWORD")),
-#     decode_responses=True
-# )
+engine = create_async_engine(
+    url=DB_URL
+)
+
+sessionmaker = async_sessionmaker(
+    engine,
+    expire_on_commit=False
+)

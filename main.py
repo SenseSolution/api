@@ -1,35 +1,52 @@
 import os
 
 from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
-from database import User, UserPydantic, UserInPydantic
-from tortoise.contrib.fastapi import register_tortoise
+from schemas import UserBase, DeskBase
+from database.models import User, Desk
+from config import DB_URL
+# from database.core import engine, sessionmaker
 
-app = FastAPI(title="todo api", version="0.0.2")
+engine = create_async_engine(
+    url=DB_URL
+)
 
-@app.on_event('startup')
-async def startup():
-    register_tortoise(
-        app,
-        db_url=str(os.getenv("DB_URL")),
-        modules={'models': ['database.models']},
-        generate_schemas=True
-    )
+sessionmaker = async_sessionmaker(
+    engine,
+    expire_on_commit=False
+)
 
+
+app = FastAPI(title="todo api", version="1.0.0")
+
+async def get_session() -> AsyncSession:
+    async with sessionmaker() as session:
+        return session
 
 @app.get("/")
 async def main():
-    return {"message", "Hello!"}
+    return {"message": "Hello!"}
 
 @app.post("/users")
-async def create_user(user: UserInPydantic):
-    obj = await User.create(**user.dict(exclude_unset=True))
-    return await UserPydantic.from_tortoise_orm(obj)
+async def create_user(user: UserBase):
+    session = sessionmaker()
+    u = User(
+        username=user.username,
+        name=user.name
+    )
+    
+    await session.add(u)
+    await session.commit()
+    await session.refresh(u)
+    return u
+    
+    
 
 @app.get("/users")
 async def get_users():
-    return await UserPydantic.from_queryset(User.all())
+    pass
 
 @app.get('users/{username}')
 async def get_user(username: str):
-    return await UserPydantic.from_queryset_single(User.get(username=username))
+    pass
