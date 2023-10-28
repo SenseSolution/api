@@ -13,7 +13,7 @@ from src.database.core import engine, sessionmaker, get_session
 from src import todo, general
 
 
-app = FastAPI(title="todo api", version="2.0.2")
+app = FastAPI(title="todo api", version="2.0.3")
 app.include_router(todo.router)
 app.include_router(general.router)
 
